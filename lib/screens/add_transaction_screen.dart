@@ -22,7 +22,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   String? _selectedLabel;
   bool _submitted = false;
 
-  static const _ingresosLabels = [
+  static const _kCreateNew = '__CREATE_NEW__';
+
+  final List<String> _ingresosLabels = [
     'Sueldo',
     'Freelance',
     'Inversión',
@@ -31,7 +33,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     'Otros',
   ];
 
-  static const _gastosLabels = [
+  final List<String> _egresoLabels = [
     'Comida',
     'Transporte',
     'Entretenimiento',
@@ -40,7 +42,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     'Otros',
   ];
 
-  List<String> get _labels => _isIncome ? _ingresosLabels : _gastosLabels;
+  List<String> get _labels => _isIncome ? _ingresosLabels : _egresoLabels;
 
   bool get _amountHasError =>
       _submitted && _amountController.text.trim().isEmpty;
@@ -94,6 +96,156 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           newTransaction: transaction,
           allTransactions: [...widget.transactions, transaction],
         ),
+      ),
+    );
+  }
+
+  void _showCreateLabelDialog() {
+    final nameController = TextEditingController();
+    String? dialogError;
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          void tryCreate() {
+            final name = nameController.text.trim();
+            if (name.isEmpty || RegExp(r'^\d+$').hasMatch(name)) {
+              setDialogState(() => dialogError = 'Ingrese un valor válido');
+              return;
+            }
+            if (_labels.any((e) => e.toLowerCase() == name.toLowerCase())) {
+              setDialogState(() => dialogError = 'La etiqueta ya existe');
+              return;
+            }
+            setState(() {
+              _labels.add(name);
+              _selectedLabel = name;
+            });
+            Navigator.pop(ctx);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text('Creación exitosa'),
+                backgroundColor: const Color(0xFF1A1A2E),
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          }
+
+          return Dialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            backgroundColor: Colors.white,
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Nueva etiqueta',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1A1A2E),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Nombre de etiqueta',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF333333),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextField(
+                    controller: nameController,
+                    autofocus: true,
+                    style: const TextStyle(
+                        fontSize: 15, color: Color(0xFF1A1A2E)),
+                    onChanged: (_) =>
+                        setDialogState(() => dialogError = null),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: dialogError != null
+                              ? Colors.red
+                              : const Color(0xFFCCCCCC),
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(
+                          color: dialogError != null
+                              ? Colors.red
+                              : const Color(0xFF1A1A2E),
+                          width: 1.5,
+                        ),
+                      ),
+                      errorText: dialogError,
+                      errorStyle: const TextStyle(
+                          color: Colors.red, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                                color: Color(0xFF1A1A2E)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24)),
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: const Text(
+                            'Cancelar',
+                            style: TextStyle(
+                                color: Color(0xFF1A1A2E),
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: tryCreate,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A1A2E),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(24)),
+                            elevation: 0,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 14),
+                          ),
+                          child: const Text(
+                            'Crear',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -300,12 +452,35 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                           ),
                           padding:
                               const EdgeInsets.symmetric(horizontal: 4),
-                          items: _labels
-                              .map((l) => DropdownMenuItem(
-                                  value: l, child: Text(l)))
-                              .toList(),
-                          onChanged: (v) =>
-                              setState(() => _selectedLabel = v),
+                          items: [
+                            ..._labels.map((l) => DropdownMenuItem(
+                                value: l, child: Text(l))),
+                            DropdownMenuItem(
+                              value: _kCreateNew,
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.add,
+                                      size: 16,
+                                      color: Color(0xFF1A1A2E)),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Crear nueva etiqueta',
+                                    style: TextStyle(
+                                      color: Color(0xFF1A1A2E),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                          onChanged: (v) {
+                            if (v == _kCreateNew) {
+                              _showCreateLabelDialog();
+                            } else {
+                              setState(() => _selectedLabel = v);
+                            }
+                          },
                         ),
                       ),
                     ),
