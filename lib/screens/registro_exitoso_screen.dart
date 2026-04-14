@@ -77,7 +77,7 @@ class RegistroExitosoScreen extends StatelessWidget {
                     const SizedBox(height: 6),
 
                     Text(
-                      '${newTransaction.isIncome ? 'Ingreso' : 'Gasto'} de '
+                      '${newTransaction.isIncome ? 'Ingreso' : 'Egreso'} de '
                       '\$${_fmt(newTransaction.amount)} guardado '
                       "con la etiqueta '${newTransaction.label}'",
                       textAlign: TextAlign.center,

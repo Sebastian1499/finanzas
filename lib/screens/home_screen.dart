@@ -26,12 +26,13 @@ class _HomeScreenState extends State<HomeScreen>
 
   List<Transaction> get _ingresos =>
       _transactions.where((t) => t.isIncome).toList();
-  List<Transaction> get _gastos =>
+  List<Transaction> get _egresos =>
       _transactions.where((t) => !t.isIncome).toList();
   double get _totalIngresos =>
       _ingresos.fold(0.0, (s, t) => s + t.amount);
-  double get _totalGastos =>
-      _gastos.fold(0.0, (s, t) => s + t.amount);
+  double get _totalEgresos =>
+      _egresos.fold(0.0, (s, t) => s + t.amount);
+  double get _saldo => _totalIngresos - _totalEgresos;
 
   String _fmt(double amount) => amount
       .toStringAsFixed(0)
@@ -149,34 +150,28 @@ class _HomeScreenState extends State<HomeScreen>
                       child: CustomPaint(
                         painter: _DonutChartPainter(
                           ingresos: _totalIngresos,
-                          gastos: _totalGastos,
+                          egresos: _totalEgresos,
                         ),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               const Text(
-                                'Total',
+                                'Saldo',
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: Color(0xFF888888),
                                 ),
                               ),
-                              const Text(
-                                'Ingresos',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: Color(0xFF1A1A2E),
-                                ),
-                              ),
                               const SizedBox(height: 4),
                               Text(
-                                '\$${_fmt(_totalIngresos)}',
-                                style: const TextStyle(
+                                '${_saldo < 0 ? '-' : ''}\$${_fmt(_saldo.abs())}',
+                                style: TextStyle(
                                   fontSize: 22,
                                   fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1A1A2E),
+                                  color: _saldo >= 0
+                                      ? const Color(0xFF1A1A2E)
+                                      : const Color(0xFFC62828),
                                 ),
                               ),
                             ],
@@ -198,10 +193,10 @@ class _HomeScreenState extends State<HomeScreen>
 
               const SizedBox(height: 14),
 
-              // ── Sección Gastos ─────────────────────────────────────────
+              // ── Sección Egresos ────────────────────────────────────────
               _SectionCard(
-                title: 'Gastos',
-                items: _gastos,
+                title: 'Egresos',
+                items: _egresos,
               ),
 
               const SizedBox(height: 28),
@@ -257,16 +252,16 @@ class _HomeScreenState extends State<HomeScreen>
 
 class _DonutChartPainter extends CustomPainter {
   final double ingresos;
-  final double gastos;
+  final double egresos;
 
-  const _DonutChartPainter({required this.ingresos, required this.gastos});
+  const _DonutChartPainter({required this.ingresos, required this.egresos});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 18;
     const strokeWidth = 28.0;
-    final total = ingresos + gastos;
+    final total = ingresos + egresos;
 
     // Track de fondo
     final trackPaint = Paint()
@@ -277,8 +272,8 @@ class _DonutChartPainter extends CustomPainter {
 
     final rect = Rect.fromCircle(center: center, radius: radius);
 
-    // Arco gastos (rojo)
-    final gastosAngle = (gastos / total) * 2 * pi;
+    // Arco egresos (rojo)
+    final gastosAngle = (egresos / total) * 2 * pi;
     final gastosPaint = Paint()
       ..color = const Color(0xFFE57373)
       ..style = PaintingStyle.stroke
@@ -298,7 +293,7 @@ class _DonutChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutChartPainter oldDelegate) =>
-      oldDelegate.ingresos != ingresos || oldDelegate.gastos != gastos;
+      oldDelegate.ingresos != ingresos || oldDelegate.egresos != egresos;
 }
 
 // ─── Modelos y widgets ─────────────────────────────────────────────────────────

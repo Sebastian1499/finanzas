@@ -209,7 +209,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   _toggleBtn(
                       'Agregar ingresos', _isIncome, () => _switchMode(true)),
                   const SizedBox(width: 8),
-                  _toggleBtn('Agregar gastos', !_isIncome,
+                  _toggleBtn('Agregar egresos', !_isIncome,
                       () => _switchMode(false)),
                 ],
               ),
@@ -224,7 +224,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   children: [
                     // Amount field
                     Text(
-                      _isIncome ? 'Ingresos' : 'Gastos',
+                      _isIncome ? 'Ingresos' : 'Egresos',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
