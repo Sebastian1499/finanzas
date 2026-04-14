@@ -10,8 +10,12 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with SingleTickerProviderStateMixin {
   int _selectedIndex = 0;
+
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
 
   final List<Transaction> _transactions = [
     const Transaction(label: 'Sueldo', amount: 20000, isIncome: true),
@@ -32,6 +36,36 @@ class _HomeScreenState extends State<HomeScreen> {
   String _fmt(double amount) => amount
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..repeat(reverse: true);
+    _pulseAnim = Tween<double>(begin: 1.0, end: 1.06).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  void _goToAddTransaction() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddTransactionScreen(
+          transactions: List.from(_transactions),
+          onSave: (t) => setState(() => _transactions.add(t)),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -99,45 +133,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
               const SizedBox(height: 32),
 
-              // ── Gráfica de dona ────────────────────────────────────────
+              // ── Gráfica de dona (tappable + pulso) ───────────────────
               Center(
-                child: SizedBox(
-                  width: 220,
-                  height: 220,
-                  child: CustomPaint(
-                    painter: _DonutChartPainter(
-                      ingresos: _totalIngresos,
-                      gastos: _totalGastos,
+                child: GestureDetector(
+                  onTap: _goToAddTransaction,
+                  child: AnimatedBuilder(
+                    animation: _pulseAnim,
+                    builder: (context, child) => Transform.scale(
+                      scale: _pulseAnim.value,
+                      child: child,
                     ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text(
-                            'Total',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Color(0xFF888888),
-                            ),
+                    child: SizedBox(
+                      width: 220,
+                      height: 220,
+                      child: CustomPaint(
+                        painter: _DonutChartPainter(
+                          ingresos: _totalIngresos,
+                          gastos: _totalGastos,
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Total',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Color(0xFF888888),
+                                ),
+                              ),
+                              const Text(
+                                'Ingresos',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1A1A2E),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                '\$${_fmt(_totalIngresos)}',
+                                style: const TextStyle(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF1A1A2E),
+                                ),
+                              ),
+                            ],
                           ),
-                          const Text(
-                            'Ingresos',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF1A1A2E),
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '\$${_fmt(_totalIngresos)}',
-                            style: const TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A2E),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
                   ),
@@ -164,22 +208,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ),
-      ),
-
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF1A1A2E),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => AddTransactionScreen(
-                transactions: List.from(_transactions),
-                onSave: (t) => setState(() => _transactions.add(t)),
-              ),
-            ),
-          );
-        },
-        child: const Icon(Icons.add, color: Colors.white),
       ),
 
       // ── Barra de navegación ──────────────────────────────────────────
