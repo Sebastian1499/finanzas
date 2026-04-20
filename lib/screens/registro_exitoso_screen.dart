@@ -237,10 +237,6 @@ class RegistroExitosoScreen extends StatelessWidget {
               activeIcon: Icon(Icons.bar_chart),
               label: 'Estadísticas'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined),
-              activeIcon: Icon(Icons.settings),
-              label: 'Ajustes'),
-          BottomNavigationBarItem(
               icon: Icon(Icons.account_balance_wallet_outlined),
               activeIcon: Icon(Icons.account_balance_wallet),
               label: 'Cuentas'),
