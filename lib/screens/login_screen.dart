@@ -1,6 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
-import 'home_screen.dart';
+import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +16,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   String? _credentialError;
+  bool _isLoading = false;
+  final _authService = AuthService();
 
   @override
   void initState() {
@@ -34,13 +37,20 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _login() {
+  void _login() async {
     setState(() => _credentialError = null);
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signIn(
+        _emailController.text.trim(),
+        _passwordController.text,
       );
+      // AuthGate en main.dart detecta el login y muestra HomeScreen
+    } on FirebaseAuthException catch (e) {
+      setState(() => _credentialError = AuthService.errorMessage(e));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -112,10 +122,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 36),
                 // Botón iniciar sesión
-                _PrimaryButton(
-                  text: 'Iniciar sesión',
-                  onPressed: _login,
-                ),
+                _isLoading
+                    ? const SizedBox(
+                        height: 50,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF1A1A2E)),
+                        ),
+                      )
+                    : _PrimaryButton(
+                        text: 'Iniciar sesión',
+                        onPressed: _login,
+                      ),
                 const SizedBox(height: 14),
                 // Botón crear cuenta
                 _OutlineButton(

@@ -1,4 +1,7 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/firestore_service.dart';
+import 'change_password_screen.dart';
 
 class UserSettingsScreen extends StatefulWidget {
   const UserSettingsScreen({super.key});
@@ -8,23 +11,57 @@ class UserSettingsScreen extends StatefulWidget {
 }
 
 class _UserSettingsScreenState extends State<UserSettingsScreen> {
-  // Valores simulados del perfil
-  final Map<String, String> _profile = {
-    'name': 'Usuario',
-    'birthdate': '01/01/2000',
-    'email': 'usuario@correo.com',
-    'phone': '+57 300 000 0000',
+  // Valores del perfil cargados desde Firestore
+  Map<String, String> _profile = {
+    'name': '',
+    'birthdate': '',
+    'email': '',
+    'phone': '',
     'currency': 'COP',
   };
+  bool _loadingProfile = true;
+
+  final _fs = FirestoreService();
+  late final String _uid;
+
+  @override
+  void initState() {
+    super.initState();
+    _uid = FirebaseAuth.instance.currentUser!.uid;
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    final data = await _fs.profileStream(_uid).first;
+    if (mounted) {
+      setState(() {
+        _profile = {
+          'name': (data['name'] as String?) ?? '',
+          'birthdate': (data['birthdate'] as String?) ?? '',
+          'email': (data['email'] as String?) ?? '',
+          'phone': (data['phone'] as String?) ?? '',
+          'currency': (data['currency'] as String?) ?? 'COP',
+        };
+        _loadingProfile = false;
+      });
+    }
+  }
 
   void _editField({
     required String title,
     required String fieldKey,
-    bool isPassword = false,
     bool isDate = false,
   }) {
-    final controller =
-        TextEditingController(text: isPassword ? '' : _profile[fieldKey]);
+    // El cambio de contraseña tiene su propia pantalla
+    if (fieldKey == 'password') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ChangePasswordScreen()),
+      );
+      return;
+    }
+
+    final controller = TextEditingController(text: _profile[fieldKey]);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -42,7 +79,8 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+            children:
+            [
               Center(
                 child: Container(
                   width: 40,
@@ -65,14 +103,11 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: controller,
-                obscureText: isPassword,
-                keyboardType: isPassword
-                    ? TextInputType.visiblePassword
-                    : isDate
-                        ? TextInputType.datetime
-                        : TextInputType.text,
+                keyboardType: isDate
+                    ? TextInputType.datetime
+                    : TextInputType.text,
                 decoration: InputDecoration(
-                  hintText: isPassword ? 'Nueva contraseña' : 'Nuevo valor',
+                  hintText: 'Nuevo valor',
                   filled: true,
                   fillColor: const Color(0xFFF5F5F5),
                   border: OutlineInputBorder(
@@ -95,25 +130,24 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    if (controller.text.isNotEmpty && !isPassword) {
-                      setState(() => _profile[fieldKey] = controller.text);
-                    }
+                  onPressed: () async {
+                    final newValue = controller.text.trim();
+                    if (newValue.isEmpty) return;
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isPassword
-                              ? 'Contraseña actualizada'
-                              : '$title actualizado',
+                    setState(() => _profile[fieldKey] = newValue);
+                    await _fs.updateProfile(_uid, {fieldKey: newValue});
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$title actualizado'),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF1A1A2E),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: const Color(0xFF1A1A2E),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    );
+                      );
+                    }
                   },
                   child: const Text(
                     'Guardar',
@@ -152,7 +186,10 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
         centerTitle: true,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: _loadingProfile
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF1A1A2E)))
+            : SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,8 +295,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                     value: '••••••••',
                     onTap: () => _editField(
                         title: 'Contraseña',
-                        fieldKey: 'password',
-                        isPassword: true),
+                        fieldKey: 'password'),
                     isLast: true,
                   ),
                 ],

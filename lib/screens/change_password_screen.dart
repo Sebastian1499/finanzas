@@ -1,4 +1,6 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -16,6 +18,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -25,18 +29,34 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Contraseña actualizada correctamente'),
-          backgroundColor: const Color(0xFF1A1A2E),
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        ),
+  Future<void> _submit() async {
+    setState(() => _errorMessage = null);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      await AuthService().changePassword(
+        currentPassword: _currentCtrl.text,
+        newPassword: _newCtrl.text,
       );
-      Navigator.pop(context);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Contraseña actualizada correctamente'),
+            backgroundColor: const Color(0xFF1A1A2E),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10)),
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _errorMessage = AuthService.errorMessage(e));
+    } catch (_) {
+      setState(() =>
+          _errorMessage = 'No se pudo cambiar la contraseña. Intenta de nuevo.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -147,26 +167,52 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                 ),
                 const SizedBox(height: 40),
 
-                // ── Botón guardar ─────────────────────────────────────
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A1A2E),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
-                      elevation: 0,
+                // ── Mensaje de error ──────────────────────────────────
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: _submit,
-                    child: const Text(
-                      'Guardar contraseña',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                          color: Color(0xFFC62828), fontSize: 13),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 20),
+                ],
+
+                // ── Botón guardar ─────────────────────────────────────
+                _isLoading
+                    ? const SizedBox(
+                        height: 54,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF1A1A2E)),
+                        ),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A1A2E),
+                            foregroundColor: Colors.white,
+                            padding:
+                                const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
+                            elevation: 0,
+                          ),
+                          onPressed: _submit,
+                          child: const Text(
+                            'Guardar contraseña',
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
                 const SizedBox(height: 32),
               ],
             ),

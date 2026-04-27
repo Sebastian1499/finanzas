@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:math';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../models/transaction.dart';
-import 'add_transaction_screen.dart';
-import 'statistics_screen.dart';
-import 'settings_screen.dart';
 import '../models/app_label.dart';
+import '../models/transaction.dart';
+import '../services/firestore_service.dart';
+import 'add_transaction_screen.dart';
+import 'historial_screen.dart';
+import 'settings_screen.dart';
+import 'statistics_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,12 +24,11 @@ class _HomeScreenState extends State<HomeScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
-  final List<Transaction> _transactions = [
-    const Transaction(label: 'Sueldo', amount: 20000, isIncome: true),
-    const Transaction(label: 'Viaje', amount: 50000, isIncome: true),
-    const Transaction(label: 'Comida', amount: 10000, isIncome: false),
-    const Transaction(label: 'Transporte', amount: 10000, isIncome: false),
-  ];
+  final _fs = FirestoreService();
+  late final String _uid;
+  List<Transaction> _transactions = [];
+  late StreamSubscription<List<Transaction>> _txSub;
+  late StreamSubscription<List<AppLabel>> _labelSub;
 
   List<Transaction> get _ingresos =>
       _transactions.where((t) => t.isIncome).toList();
@@ -37,13 +40,8 @@ class _HomeScreenState extends State<HomeScreen>
       _egresos.fold(0.0, (s, t) => s + t.amount);
   double get _saldo => _totalIngresos - _totalEgresos;
 
-  List<MapEntry<int, Transaction>> get _indexedIngresos =>
-      _transactions.asMap().entries.where((e) => e.value.isIncome).toList();
-  List<MapEntry<int, Transaction>> get _indexedEgresos =>
-      _transactions.asMap().entries.where((e) => !e.value.isIncome).toList();
-
   bool _selectionMode = false;
-  final Set<int> _selectedIndices = {};
+  final Set<String> _selectedIds = {};
 
   String _fmt(double amount) => amount
       .toStringAsFixed(0)
@@ -52,6 +50,13 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   void initState() {
     super.initState();
+    _uid = FirebaseAuth.instance.currentUser!.uid;
+    _txSub = _fs.transactionsStream(_uid).listen(
+      (txs) { if (mounted) setState(() => _transactions = txs); },
+    );
+    _labelSub = _fs.labelsStream(_uid).listen(
+      (lbls) { if (mounted) setState(() => globalLabels = lbls); },
+    );
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -63,6 +68,8 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
+    _txSub.cancel();
+    _labelSub.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -73,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen>
       MaterialPageRoute(
         builder: (_) => AddTransactionScreen(
           transactions: List.from(_transactions),
-          onSave: (t) => setState(() => _transactions.add(t)),
+    onSave: (t) => _fs.addTransaction(_uid, t),
         ),
       ),
     );
@@ -81,20 +88,20 @@ class _HomeScreenState extends State<HomeScreen>
 
   // ── Selección múltiple ────────────────────────────────────────────────────
 
-  void _enterSelection(int index) {
+  void _enterSelection(String id) {
     setState(() {
       _selectionMode = true;
-      _selectedIndices.add(index);
+      _selectedIds.add(id);
     });
   }
 
-  void _toggleSelection(int index) {
+  void _toggleSelection(String id) {
     setState(() {
-      if (_selectedIndices.contains(index)) {
-        _selectedIndices.remove(index);
-        if (_selectedIndices.isEmpty) _selectionMode = false;
+      if (_selectedIds.contains(id)) {
+        _selectedIds.remove(id);
+        if (_selectedIds.isEmpty) _selectionMode = false;
       } else {
-        _selectedIndices.add(index);
+        _selectedIds.add(id);
       }
     });
   }
@@ -102,24 +109,21 @@ class _HomeScreenState extends State<HomeScreen>
   void _exitSelection() {
     setState(() {
       _selectionMode = false;
-      _selectedIndices.clear();
+      _selectedIds.clear();
     });
   }
 
   void _deleteSelected() {
+    final ids = _selectedIds.toList();
     setState(() {
-      final sorted = _selectedIndices.toList()
-        ..sort((a, b) => b.compareTo(a));
-      for (final i in sorted) {
-        _transactions.removeAt(i);
-      }
       _selectionMode = false;
-      _selectedIndices.clear();
+      _selectedIds.clear();
     });
+    _fs.deleteTransactions(_uid, ids);
   }
 
-  void _showEditSheet(int index) {
-    final t = _transactions[index];
+  void _showEditSheet(String id) {
+    final t = _transactions.firstWhere((tx) => tx.id == id);
     final amountCtrl =
         TextEditingController(text: t.amount.toStringAsFixed(0));
     final allLabels = globalLabels.map((l) => l.name).toList();
@@ -263,16 +267,16 @@ class _HomeScreenState extends State<HomeScreen>
                       final newAmount = double.tryParse(
                               amountCtrl.text.replaceAll(',', '.')) ??
                           t.amount;
+                      final updated = t.copyWith(
+                        label: selectedLabel,
+                        amount: newAmount,
+                      );
                       Navigator.pop(ctx);
                       setState(() {
-                        _transactions[index] = Transaction(
-                          label: selectedLabel,
-                          amount: newAmount,
-                          isIncome: t.isIncome,
-                        );
                         _selectionMode = false;
-                        _selectedIndices.clear();
+                        _selectedIds.clear();
                       });
+                      _fs.updateTransaction(_uid, updated);
                     },
                     child: const Text(
                       'Guardar cambios',
@@ -346,14 +350,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ),
-                  // Menú
-                  IconButton(
-                    icon: const Icon(
-                      Icons.more_horiz,
-                      color: Color(0xFF1A1A2E),
-                    ),
-                    onPressed: () {},
-                  ),
+                  const SizedBox(width: 46),
                 ],
               ),
 
@@ -413,11 +410,11 @@ class _HomeScreenState extends State<HomeScreen>
               // ── Barra de selección ────────────────────────────────────
               if (_selectionMode) ...[
                 _SelectionBar(
-                  count: _selectedIndices.length,
+                  count: _selectedIds.length,
                   onCancel: _exitSelection,
                   onDelete: _deleteSelected,
-                  onEdit: _selectedIndices.length == 1
-                      ? () => _showEditSheet(_selectedIndices.first)
+                  onEdit: _selectedIds.length == 1
+                      ? () => _showEditSheet(_selectedIds.first)
                       : null,
                 ),
                 const SizedBox(height: 14),
@@ -426,21 +423,21 @@ class _HomeScreenState extends State<HomeScreen>
               // ── Sección Ingresos ───────────────────────────────────────
               _SectionCard(
                 title: 'Ingresos',
-                indexedItems: _indexedIngresos,
+                items: _ingresos,
                 selectionMode: _selectionMode,
-                selectedIndices: _selectedIndices,
+                selectedIds: _selectedIds,
                 onLongPress: _enterSelection,
                 onToggle: _toggleSelection,
               ),
 
               const SizedBox(height: 14),
 
-              // ── Sección Egresos ────────────────────────────────────────
+              // ── Sección Egresos ──────────────────────────────────────────────────────
               _SectionCard(
                 title: 'Egresos',
-                indexedItems: _indexedEgresos,
+                items: _egresos,
                 selectionMode: _selectionMode,
-                selectedIndices: _selectedIndices,
+                selectedIds: _selectedIds,
                 onLongPress: _enterSelection,
                 onToggle: _toggleSelection,
               ),
@@ -451,17 +448,10 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           ),
 
-          // ── Tab 1: Historial (placeholder) ────────────────────────────
-          const SafeArea(
-            child: Center(
-              child: Text(
-                'Historial',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFF888888),
-                ),
-              ),
-            ),
+          // ── Tab 1: Historial ────────────────────────────────────────
+          HistorialScreen(
+            transactions: _transactions,
+            onAddTransaction: _goToAddTransaction,
           ),
 
           // ── Tab 2: Estadísticas ───────────────────────────────────────
@@ -471,6 +461,18 @@ class _HomeScreenState extends State<HomeScreen>
           const SettingsScreen(),
         ],
       ),
+
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
+              onPressed: _goToAddTransaction,
+              backgroundColor: const Color(0xFF1A1A2E),
+              foregroundColor: Colors.white,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16)),
+              child: const Icon(Icons.add_rounded, size: 28),
+            )
+          : null,
 
       // ── Barra de navegación ──────────────────────────────────────────
       bottomNavigationBar: BottomNavigationBar(
@@ -631,17 +633,17 @@ class _SelectionBar extends StatelessWidget {
 
 class _SectionCard extends StatelessWidget {
   final String title;
-  final List<MapEntry<int, Transaction>> indexedItems;
+  final List<Transaction> items;
   final bool selectionMode;
-  final Set<int> selectedIndices;
-  final void Function(int) onLongPress;
-  final void Function(int) onToggle;
+  final Set<String> selectedIds;
+  final void Function(String) onLongPress;
+  final void Function(String) onToggle;
 
   const _SectionCard({
     required this.title,
-    required this.indexedItems,
+    required this.items,
     required this.selectionMode,
-    required this.selectedIndices,
+    required this.selectedIds,
     required this.onLongPress,
     required this.onToggle,
   });
@@ -677,13 +679,11 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 12),
-          ...indexedItems.map((entry) {
-            final idx = entry.key;
-            final item = entry.value;
-            final isSelected = selectedIndices.contains(idx);
+          ...items.map((item) {
+            final isSelected = selectedIds.contains(item.id);
             return GestureDetector(
-              onLongPress: () => onLongPress(idx),
-              onTap: selectionMode ? () => onToggle(idx) : null,
+              onLongPress: () => onLongPress(item.id),
+              onTap: selectionMode ? () => onToggle(item.id) : null,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 150),
                 margin: const EdgeInsets.only(bottom: 4),

@@ -1,5 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'account_created_screen.dart';
+import '../services/auth_service.dart';
+import '../services/firestore_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -18,6 +21,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
+  String? _errorMessage;
+  final _authService = AuthService();
 
   @override
   void dispose() {
@@ -29,12 +35,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _submit() {
-    if (_formKey.currentState!.validate()) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AccountCreatedScreen()),
+  Future<void> _submit() async {
+    setState(() => _errorMessage = null);
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+    try {
+      final cred = await _authService.register(
+        name: _nameController.text.trim(),
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
       );
+      await FirestoreService().initDefaultLabels(cred.user!.uid);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const AccountCreatedScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      setState(() => _errorMessage = AuthService.errorMessage(e));
+    } catch (_) {
+      setState(() => _errorMessage = 'Error inesperado. Intenta de nuevo.');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -166,26 +189,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   },
                 ),
                 const SizedBox(height: 36),
-                // Botón crear cuenta
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _submit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1A1A2E),
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                      elevation: 0,
-                    ),
-                    child: const Text(
-                      'Crear cuenta',
-                      style: TextStyle(
-                          fontSize: 15, fontWeight: FontWeight.w600),
+                // Mensaje de error
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(
+                          color: Colors.red, fontSize: 13),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                ),
+
+                // Botón crear cuenta
+                _isLoading
+                    ? const SizedBox(
+                        height: 50,
+                        child: Center(
+                          child: CircularProgressIndicator(
+                              color: Color(0xFF1A1A2E)),
+                        ),
+                      )
+                    : SizedBox(
+                        width: double.infinity,
+                        height: 50,
+                        child: ElevatedButton(
+                          onPressed: _submit,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF1A1A2E),
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
+                            elevation: 0,
+                          ),
+                          child: const Text(
+                            'Crear cuenta',
+                            style: TextStyle(
+                                fontSize: 15, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
                 const SizedBox(height: 40),
               ],
             ),

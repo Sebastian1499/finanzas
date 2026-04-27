@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/app_label.dart';
+import '../services/firestore_service.dart';
 
 class LabelsScreen extends StatefulWidget {
   const LabelsScreen({super.key});
@@ -8,7 +11,11 @@ class LabelsScreen extends StatefulWidget {
   State<LabelsScreen> createState() => _LabelsScreenState();
 }
 
+
 class _LabelsScreenState extends State<LabelsScreen> {
+  final _fs = FirestoreService();
+  String get _uid => FirebaseAuth.instance.currentUser!.uid;
+
   // ── Abrir bottom sheet para crear o editar ──────────────────────────────
   void _openLabelSheet({AppLabel? existing, int? index}) {
     final nameCtrl =
@@ -162,7 +169,7 @@ class _LabelsScreenState extends State<LabelsScreen> {
                           ),
                           child: ValueListenableBuilder<TextEditingValue>(
                             valueListenable: nameCtrl,
-                            builder: (_, val, __) => Text(
+                            builder: (_, val, _) => Text(
                               val.text.isEmpty ? 'Etiqueta' : val.text,
                               style: TextStyle(
                                 fontSize: 13,
@@ -190,20 +197,29 @@ class _LabelsScreenState extends State<LabelsScreen> {
                                   BorderRadius.circular(12)),
                           elevation: 0,
                         ),
-                        onPressed: () {
+                        onPressed: () async {
                           final name = nameCtrl.text.trim();
                           if (name.isEmpty) return;
                           Navigator.pop(ctx);
-                          setState(() {
-                            if (existing == null) {
-                              globalLabels.add(AppLabel(
-                                  name: name,
-                                  color: selectedColor));
-                            } else {
+                          if (existing == null) {
+                            // Nueva etiqueta: generar ID único de Firestore
+                            final id = FirebaseFirestore.instance
+                                .collection('_')
+                                .doc()
+                                .id;
+                            final newLabel = AppLabel(
+                                id: id,
+                                name: name,
+                                color: selectedColor);
+                            setState(() => globalLabels.add(newLabel));
+                            await _fs.addLabel(_uid, newLabel);
+                          } else {
+                            setState(() {
                               existing.name = name;
                               existing.color = selectedColor;
-                            }
-                          });
+                            });
+                            await _fs.updateLabel(_uid, existing);
+                          }
                         },
                         child: const Text(
                           'Guardar',
@@ -249,9 +265,11 @@ class _LabelsScreenState extends State<LabelsScreen> {
                 style: TextStyle(color: Color(0xFF888888))),
           ),
           TextButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(context);
+              final label = globalLabels[index];
               setState(() => globalLabels.removeAt(index));
+              await _fs.deleteLabel(_uid, label.id);
             },
             child: const Text('Eliminar',
                 style: TextStyle(color: Color(0xFFC62828))),

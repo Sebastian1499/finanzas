@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import '../services/auth_service.dart';
 import 'user_settings_screen.dart';
 import 'change_password_screen.dart';
-import 'login_screen.dart';
-import 'register_screen.dart';
 import 'labels_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -70,35 +69,17 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 28),
 
             // ══════════════════════════════════════════════════════════
-            // SECCIÓN 2 — Acceso
+            // SECCIÓN 2 — Seguridad
             // ══════════════════════════════════════════════════════════
             _SectionLabel(
-              icon: Icons.login_rounded,
-              label: 'Acceso',
+              icon: Icons.lock_rounded,
+              label: 'Seguridad',
               color: const Color(0xFF2E7D32),
             ),
             const SizedBox(height: 12),
 
             _SettingsCard(
               children: [
-                _SettingsTile(
-                  icon: Icons.login_outlined,
-                  title: 'Iniciar sesión',
-                  subtitle: 'Accede a tu cuenta',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const LoginScreen()),
-                  ),
-                ),
-                _SettingsTile(
-                  icon: Icons.person_add_outlined,
-                  title: 'Crear cuenta',
-                  subtitle: 'Regístrate como nuevo usuario',
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const RegisterScreen()),
-                  ),
-                ),
                 _SettingsTile(
                   icon: Icons.lock_reset_rounded,
                   title: 'Cambiar contraseña',
@@ -194,7 +175,7 @@ class SettingsScreen extends StatelessWidget {
                   titleColor: const Color(0xFFC62828),
                   iconColor: const Color(0xFFC62828),
                   showArrow: false,
-                  onTap: () => _showComingSoon(context, 'Cerrar sesión'),
+                  onTap: () => _confirmLogout(context),
                   isLast: true,
                 ),
               ],
@@ -213,6 +194,41 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 28),
           ],
         ),
+      ),
+    );
+  }
+
+  void _confirmLogout(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Cerrar sesión',
+          style: TextStyle(
+              fontSize: 17, fontWeight: FontWeight.bold, color: Color(0xFF1A1A2E)),
+        ),
+        content: const Text(
+          '¿Estás seguro de que quieres cerrar sesión?',
+          style: TextStyle(fontSize: 14, color: Color(0xFF555555)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar',
+                style: TextStyle(color: Color(0xFF888888))),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // cerrar diálogo
+              await AuthService().signOut();
+              // AuthGate detecta el logout y muestra LoginScreen
+            },
+            child: const Text('Cerrar sesión',
+                style: TextStyle(
+                    color: Color(0xFFC62828), fontWeight: FontWeight.w600)),
+          ),
+        ],
       ),
     );
   }
