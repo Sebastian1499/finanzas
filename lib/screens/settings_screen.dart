@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../theme/app_colors.dart';
+import 'notifications_screen.dart';
 import 'user_settings_screen.dart';
 import 'change_password_screen.dart';
 import 'labels_screen.dart';
@@ -141,7 +142,11 @@ class SettingsScreen extends StatelessWidget {
                   icon: Icons.notifications_none_rounded,
                   title: 'Notificaciones',
                   subtitle: 'Alertas y recordatorios',
-                  onTap: () => _showComingSoon(context, 'Notificaciones'),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const NotificationsScreen()),
+                  ),
                 ),
                 _SettingsTile(
                   icon: Icons.color_lens_outlined,

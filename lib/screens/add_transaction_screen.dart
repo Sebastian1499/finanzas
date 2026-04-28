@@ -350,7 +350,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         },
         type: BottomNavigationBarType.fixed,
         backgroundColor: context.card,
-        selectedItemColor: const Color(0xFF1A1A2E),
+        selectedItemColor: context.textMain,
         unselectedItemColor: const Color(0xFFAAAAAA),
         selectedFontSize: 11,
         unselectedFontSize: 11,

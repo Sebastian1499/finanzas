@@ -3,11 +3,14 @@ import 'dart:math';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/app_label.dart';
+import '../models/app_notification.dart';
 import '../models/transaction.dart';
 import '../services/firestore_service.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 import 'add_transaction_screen.dart';
 import 'historial_screen.dart';
+import 'notifications_panel.dart';
 import 'settings_screen.dart';
 import 'statistics_screen.dart';
 
@@ -41,6 +44,14 @@ class _HomeScreenState extends State<HomeScreen>
       _egresos.fold(0.0, (s, t) => s + t.amount);
   double get _saldo => _totalIngresos - _totalEgresos;
 
+  Set<String> _readNotifIds = {};
+
+  List<AppNotification> get _activeNotifications =>
+      NotificationService.generate(_transactions, _readNotifIds);
+
+  int get _unreadCount =>
+      _activeNotifications.where((n) => !n.isRead).length;
+
   bool _selectionMode = false;
   final Set<String> _selectedIds = {};
 
@@ -58,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen>
     _labelSub = _fs.labelsStream(_uid).listen(
       (lbls) { if (mounted) setState(() => globalLabels = lbls); },
     );
+    _loadReadIds();
     _pulseController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
@@ -73,6 +85,24 @@ class _HomeScreenState extends State<HomeScreen>
     _labelSub.cancel();
     _pulseController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadReadIds() async {
+    final ids = await NotificationService.getReadIds();
+    if (mounted) setState(() => _readNotifIds = ids);
+  }
+
+  Future<void> _openNotifications() async {
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => NotificationsPanel(
+        notifications: _activeNotifications,
+      ),
+    );
+    // Reload so badge clears after panel closes
+    _loadReadIds();
   }
 
   void _goToAddTransaction() {
@@ -355,7 +385,49 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(width: 46),
+                  // ── Campana de notificaciones ──────────────────────
+                  SizedBox(
+                    width: 46,
+                    height: 46,
+                    child: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.notifications_outlined,
+                            color: context.textMain,
+                            size: 26,
+                          ),
+                          onPressed: _openNotifications,
+                          padding: EdgeInsets.zero,
+                          tooltip: 'Notificaciones',
+                        ),
+                        if (_unreadCount > 0)
+                          Positioned(
+                            top: 4,
+                            right: 4,
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFC62828),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  '$_unreadCount',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
 
@@ -484,7 +556,7 @@ class _HomeScreenState extends State<HomeScreen>
         onTap: (i) => setState(() => _selectedIndex = i),
         type: BottomNavigationBarType.fixed,
         backgroundColor: context.card,
-        selectedItemColor: const Color(0xFF1A1A2E),
+        selectedItemColor: context.textMain,
         unselectedItemColor: const Color(0xFFAAAAAA),
         selectedFontSize: 11,
         unselectedFontSize: 11,
