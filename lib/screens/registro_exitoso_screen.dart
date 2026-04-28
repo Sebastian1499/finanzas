@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
+import '../theme/app_colors.dart';
 
 class RegistroExitosoScreen extends StatelessWidget {
   final Transaction newTransaction;
@@ -29,7 +30,7 @@ class RegistroExitosoScreen extends StatelessWidget {
     final isPositiveSaldo = saldo >= 0;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: context.bg,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -39,7 +40,7 @@ class RegistroExitosoScreen extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(8, 12, 16, 0),
               child: IconButton(
                 icon:
-                    const Icon(Icons.arrow_back, color: Color(0xFF1A1A2E)),
+                    Icon(Icons.arrow_back, color: context.textMain),
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -94,11 +95,11 @@ class RegistroExitosoScreen extends StatelessWidget {
                     Container(
                       width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: context.card,
                         borderRadius: BorderRadius.circular(14),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.05),
+                            color: context.shadow,
                             blurRadius: 10,
                             offset: const Offset(0, 2),
                           ),
@@ -122,9 +123,9 @@ class RegistroExitosoScreen extends StatelessWidget {
                                   Expanded(
                                     child: Text(
                                       t.label,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
-                                        color: Color(0xFF333333),
+                                        color: context.textMain,
                                       ),
                                     ),
                                   ),
@@ -217,7 +218,7 @@ class RegistroExitosoScreen extends StatelessWidget {
           }
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         selectedItemColor: const Color(0xFF1A1A2E),
         unselectedItemColor: const Color(0xFFAAAAAA),
         selectedFontSize: 11,

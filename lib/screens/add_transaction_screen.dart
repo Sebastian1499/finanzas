@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/app_label.dart';
 import '../models/transaction.dart';
+import '../theme/app_colors.dart';
 import 'registro_exitoso_screen.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -88,7 +89,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       context: context,
       builder: (ctx) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
+        backgroundColor: ctx.card,
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Column(
@@ -158,7 +159,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         child: Text(
           label,
           style: TextStyle(
-            color: active ? Colors.white : const Color(0xFF444444),
+            color: active ? Colors.white : context.textMain,
             fontSize: 12,
             fontWeight: FontWeight.w500,
           ),
@@ -175,7 +176,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         _labelHasError ? Colors.red : const Color(0xFFCCCCCC);
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.card,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,8 +187,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back,
-                        color: Color(0xFF1A1A2E)),
+                    icon: Icon(Icons.arrow_back,
+                        color: context.textMain),
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
@@ -210,10 +211,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     // Amount field
                     Text(
                       _isIncome ? 'Ingresos' : 'Egresos',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF333333),
+                        color: context.textMain,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -221,8 +222,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       controller: _amountController,
                       keyboardType: const TextInputType.numberWithOptions(
                           signed: true, decimal: true),
-                      style: const TextStyle(
-                          fontSize: 15, color: Color(0xFF1A1A2E)),
+                      style: TextStyle(
+                          fontSize: 15, color: context.textMain),
                       onChanged: (_) {
                         if (_submitted) setState(() {});
                       },
@@ -257,12 +258,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     const SizedBox(height: 24),
 
                     // Label dropdown
-                    const Text(
+                    Text(
                       'Etiquetas',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
-                        color: Color(0xFF333333),
+                        color: context.textMain,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -275,12 +276,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         child: DropdownButton<String>(
                           value: _selectedLabel,
                           isExpanded: true,
-                          hint: const Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 12),
+                          hint: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
                             child: Text(
                               'Seleccionar etiqueta',
                               style: TextStyle(
-                                  color: Color(0xFF999999), fontSize: 15),
+                                  color: context.textSub, fontSize: 15),
                             ),
                           ),
                           padding:
@@ -348,7 +349,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         selectedItemColor: const Color(0xFF1A1A2E),
         unselectedItemColor: const Color(0xFFAAAAAA),
         selectedFontSize: 11,

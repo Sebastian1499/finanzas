@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/app_label.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
 
 class LabelsScreen extends StatefulWidget {
   const LabelsScreen({super.key});
@@ -33,10 +34,10 @@ class _LabelsScreenState extends State<LabelsScreen> {
               padding: EdgeInsets.only(
                   bottom: MediaQuery.of(ctx).viewInsets.bottom),
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.white,
+                decoration: BoxDecoration(
+                  color: ctx.card,
                   borderRadius:
-                      BorderRadius.vertical(top: Radius.circular(24)),
+                      const BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 padding:
                     const EdgeInsets.fromLTRB(24, 16, 24, 32),
@@ -282,21 +283,21 @@ class _LabelsScreenState extends State<LabelsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: context.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF1A1A2E), size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.textMain, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Etiquetas',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A2E),
+            color: context.textMain,
           ),
         ),
         centerTitle: true,
@@ -349,11 +350,11 @@ class _LabelsScreenState extends State<LabelsScreen> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: context.card,
                       borderRadius: BorderRadius.circular(14),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
+                          color: context.shadow,
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -372,10 +373,10 @@ class _LabelsScreenState extends State<LabelsScreen> {
                       ),
                       title: Text(
                         label.name,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w500,
-                          color: Color(0xFF1A1A2E),
+                          color: context.textMain,
                         ),
                       ),
                       subtitle: Padding(

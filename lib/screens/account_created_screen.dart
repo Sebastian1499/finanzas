@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class AccountCreatedScreen extends StatelessWidget {
   const AccountCreatedScreen({super.key});
@@ -6,13 +7,13 @@ class AccountCreatedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.card,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Color(0xFF1A1A2E), size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.textMain, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -33,22 +34,22 @@ class AccountCreatedScreen extends StatelessWidget {
               ),
               const SizedBox(height: 36),
               // Título
-              const Text(
+              Text(
                 '¡Cuenta creada!',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF1A1A2E),
+                  color: context.textMain,
                 ),
               ),
               const SizedBox(height: 16),
               // Mensaje
-              const Text(
+              Text(
                 'Tu cuenta ha sido creada exitosamente.\nYa puedes empezar a gestionar tus finanzas.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 14,
-                  color: Color(0xFF777777),
+                  color: context.textSub,
                   height: 1.6,
                 ),
               ),

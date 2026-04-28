@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
+import '../theme/app_colors.dart';
 
 class LabelDetailScreen extends StatelessWidget {
   final String label;
@@ -28,21 +29,21 @@ class LabelDetailScreen extends StatelessWidget {
     final typeLabel = isIncome ? 'Ingreso' : 'Gasto';
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: context.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF1A1A2E), size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.textMain, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A2E),
+            color: context.textMain,
           ),
         ),
         centerTitle: true,
@@ -59,11 +60,11 @@ class LabelDetailScreen extends StatelessWidget {
               Container(
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: context.card,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.06),
+                      color: context.shadow,
                       blurRadius: 12,
                       offset: const Offset(0, 3),
                     ),
@@ -94,9 +95,9 @@ class LabelDetailScreen extends StatelessWidget {
                         ),
                         Text(
                           '${transactions.length} movimiento${transactions.length == 1 ? '' : 's'}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF888888),
+                            color: context.textSub,
                           ),
                         ),
                       ],
@@ -106,9 +107,9 @@ class LabelDetailScreen extends StatelessWidget {
                     // Total
                     Text(
                       'Total acumulado',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF888888),
+                        color: context.textSub,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -127,12 +128,12 @@ class LabelDetailScreen extends StatelessWidget {
               const SizedBox(height: 24),
 
               // ── Encabezado de lista ───────────────────────────────────
-              const Text(
+              Text(
                 'Movimientos',
                 style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: Color(0xFF1A1A2E),
+                  color: context.textMain,
                 ),
               ),
 
@@ -140,23 +141,23 @@ class LabelDetailScreen extends StatelessWidget {
 
               // ── Lista de transacciones ────────────────────────────────
               if (transactions.isEmpty)
-                const Center(
+                Center(
                   child: Padding(
-                    padding: EdgeInsets.only(top: 32),
+                    padding: const EdgeInsets.only(top: 32),
                     child: Text(
                       'Sin movimientos para esta etiqueta',
-                      style: TextStyle(fontSize: 13, color: Color(0xFFAAAAAA)),
+                      style: TextStyle(fontSize: 13, color: context.textSub),
                     ),
                   ),
                 )
               else
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: context.card,
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
+                        color: context.shadow,
                         blurRadius: 10,
                         offset: const Offset(0, 2),
                       ),
@@ -166,11 +167,11 @@ class LabelDetailScreen extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: transactions.length,
-                    separatorBuilder: (_, __) => const Divider(
+                    separatorBuilder: (_, _) => Divider(
                       height: 1,
                       indent: 18,
                       endIndent: 18,
-                      color: Color(0xFFF0F0F0),
+                      color: context.divider,
                     ),
                     itemBuilder: (context, idx) {
                       final t = transactions[idx];
@@ -194,17 +195,17 @@ class LabelDetailScreen extends StatelessWidget {
                         ),
                         title: Text(
                           t.label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w500,
-                            color: Color(0xFF1A1A2E),
+                            color: context.textMain,
                           ),
                         ),
                         subtitle: Text(
                           'Movimiento #${idx + 1}',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
-                            color: Color(0xFFAAAAAA),
+                            color: context.textSub,
                           ),
                         ),
                         trailing: Text(

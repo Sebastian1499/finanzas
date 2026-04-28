@@ -78,7 +78,7 @@ class AuthService {
         return 'Correo no registrado. ¿Aún no tienes cuenta?';
       case 'wrong-password':
       case 'invalid-credential':
-        return 'Contraseña incorrecta';
+        return 'Correo o contraseña incorrectos. Si no tienes cuenta, créala.';
       case 'email-already-in-use':
         return 'Este correo ya está registrado';
       case 'weak-password':

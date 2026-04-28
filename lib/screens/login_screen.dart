@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -57,7 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.card,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -211,7 +212,7 @@ class _AppTextField extends StatelessWidget {
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.card,
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/app_label.dart';
 import '../models/transaction.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
 import 'add_transaction_screen.dart';
 import 'historial_screen.dart';
 import 'settings_screen.dart';
@@ -140,10 +141,10 @@ class _HomeScreenState extends State<HomeScreen>
           padding:
               EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
           child: Container(
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: ctx.card,
               borderRadius:
-                  BorderRadius.vertical(top: Radius.circular(24)),
+                  const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
             child: Column(
@@ -155,38 +156,40 @@ class _HomeScreenState extends State<HomeScreen>
                     width: 40,
                     height: 4,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFDDDDDD),
+                      color: ctx.handle,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Editar movimiento',
                   style: TextStyle(
                     fontSize: 17,
                     fontWeight: FontWeight.w700,
-                    color: Color(0xFF1A1A2E),
+                    color: ctx.textMain,
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Monto',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF888888),
+                    color: ctx.textSub,
                   ),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: amountCtrl,
+                  style: TextStyle(color: ctx.textMain),
                   keyboardType: const TextInputType.numberWithOptions(
                       decimal: true),
                   decoration: InputDecoration(
                     prefixText: '\$ ',
+                    prefixStyle: TextStyle(color: ctx.textMain),
                     filled: true,
-                    fillColor: const Color(0xFFF5F5F5),
+                    fillColor: ctx.inputFill,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -196,33 +199,35 @@ class _HomeScreenState extends State<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
-                const Text(
+                Text(
                   'Etiqueta',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFF888888),
+                    color: ctx.textSub,
                   ),
                 ),
                 const SizedBox(height: 8),
                 if (allLabels.isEmpty)
-                  const Text(
+                  Text(
                     'No hay etiquetas disponibles',
                     style:
-                        TextStyle(color: Color(0xFFAAAAAA), fontSize: 13),
+                        TextStyle(color: ctx.textSub, fontSize: 13),
                   )
                 else
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF5F5F5),
+                      color: ctx.inputFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: DropdownButtonHideUnderline(
                       child: DropdownButton<String>(
                         value: selectedLabel,
                         isExpanded: true,
+                        dropdownColor: ctx.card,
+                        style: TextStyle(color: ctx.textMain),
                         items: globalLabels
                             .map(
                               (l) => DropdownMenuItem(
@@ -296,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: context.bg,
       body: IndexedStack(
         index: _selectedIndex,
         children: [
@@ -323,9 +328,9 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                   ),
                   // Título + subtítulo (centrado)
-                  const Expanded(
+                  Expanded(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
@@ -334,16 +339,16 @@ class _HomeScreenState extends State<HomeScreen>
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFF1A1A2E),
+                              color: context.textMain,
                             ),
                           ),
-                          SizedBox(height: 2),
+                          const SizedBox(height: 2),
                           Text(
                             'Controla tus finanzas personales',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Color(0xFF888888),
+                              color: context.textSub,
                             ),
                           ),
                         ],
@@ -372,17 +377,16 @@ class _HomeScreenState extends State<HomeScreen>
                       child: CustomPaint(
                         painter: _DonutChartPainter(
                           ingresos: _totalIngresos,
-                          egresos: _totalEgresos,
-                        ),
+                          egresos: _totalEgresos,                          trackColor: context.donutTrack,                        ),
                         child: Center(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text(
+                              Text(
                                 'Saldo',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Color(0xFF888888),
+                                  color: context.textSub,
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -479,7 +483,7 @@ class _HomeScreenState extends State<HomeScreen>
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         selectedItemColor: const Color(0xFF1A1A2E),
         unselectedItemColor: const Color(0xFFAAAAAA),
         selectedFontSize: 11,
@@ -517,8 +521,13 @@ class _HomeScreenState extends State<HomeScreen>
 class _DonutChartPainter extends CustomPainter {
   final double ingresos;
   final double egresos;
+  final Color trackColor;
 
-  const _DonutChartPainter({required this.ingresos, required this.egresos});
+  const _DonutChartPainter({
+    required this.ingresos,
+    required this.egresos,
+    required this.trackColor,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -529,7 +538,7 @@ class _DonutChartPainter extends CustomPainter {
 
     // Track de fondo
     final trackPaint = Paint()
-      ..color = const Color(0xFFEEEEEE)
+      ..color = trackColor
       ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
     canvas.drawCircle(center, radius, trackPaint);
@@ -557,7 +566,7 @@ class _DonutChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _DonutChartPainter oldDelegate) =>
-      oldDelegate.ingresos != ingresos || oldDelegate.egresos != egresos;
+      oldDelegate.ingresos != ingresos || oldDelegate.egresos != egresos || oldDelegate.trackColor != trackColor;
 }
 
 // ─── Modelos y widgets ─────────────────────────────────────────────────────────
@@ -656,11 +665,11 @@ class _SectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -672,10 +681,10 @@ class _SectionCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E),
+              color: context.textMain,
             ),
           ),
           const SizedBox(height: 12),
@@ -733,9 +742,9 @@ class _SectionCard extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 14,
-                          color: Color(0xFF444444),
+                          color: context.textMain,
                         ),
                       ),
                     ),

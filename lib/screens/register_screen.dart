@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'account_created_screen.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -64,19 +65,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: context.card,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new,
-              color: Color(0xFF1A1A2E), size: 20),
+          icon: Icon(Icons.arrow_back_ios_new,
+              color: context.textMain, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Crear cuenta',
           style: TextStyle(
-            color: Color(0xFF1A1A2E),
+            color: context.textMain,
             fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
@@ -288,7 +289,7 @@ class _RegisterField extends StatelessWidget {
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.card,
       ),
     );
   }

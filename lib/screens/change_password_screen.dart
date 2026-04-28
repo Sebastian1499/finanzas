@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -63,21 +64,21 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: context.bg,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: context.card,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: Color(0xFF1A1A2E), size: 20),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: context.textMain, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
+        title: Text(
           'Cambiar contraseña',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: Color(0xFF1A1A2E),
+            color: context.textMain,
           ),
         ),
         centerTitle: true,
@@ -231,10 +232,10 @@ class _FieldLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text,
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 13,
         fontWeight: FontWeight.w600,
-        color: Color(0xFF1A1A2E),
+        color: context.textMain,
       ),
     );
   }
@@ -265,7 +266,7 @@ class _PasswordField extends StatelessWidget {
         hintText: hintText,
         hintStyle: const TextStyle(color: Color(0xFFBBBBBB)),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: context.inputFill,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
         border: OutlineInputBorder(

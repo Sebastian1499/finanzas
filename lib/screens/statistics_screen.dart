@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/transaction.dart';
+import '../theme/app_colors.dart';
 import 'label_detail_screen.dart';
 
 // ─── Paleta de colores para las porciones del pastel ─────────────────────────
@@ -56,7 +57,7 @@ class StatisticsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // ── Header ────────────────────────────────────────────────
-            const Center(
+            Center(
               child: Column(
                 children: [
                   Text(
@@ -64,13 +65,13 @@ class StatisticsScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
+                      color: context.textMain,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Toca una categoría para ver el detalle',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                    style: TextStyle(fontSize: 12, color: context.textSub),
                   ),
                 ],
               ),
@@ -183,11 +184,11 @@ class _PieChartCardState extends State<_PieChartCard> {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.card,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: context.shadow,
             blurRadius: 12,
             offset: const Offset(0, 3),
           ),
@@ -199,16 +200,16 @@ class _PieChartCardState extends State<_PieChartCard> {
         children: [
           Text(
             widget.title,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
-              color: Color(0xFF1A1A2E),
+              color: context.textMain,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             widget.subtitle,
-            style: const TextStyle(fontSize: 12, color: Color(0xFF888888)),
+            style: TextStyle(fontSize: 12, color: context.textSub),
           ),
           const SizedBox(height: 24),
 
@@ -218,9 +219,9 @@ class _PieChartCardState extends State<_PieChartCard> {
                 padding: const EdgeInsets.symmetric(vertical: 24),
                 child: Text(
                   widget.emptyMessage,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFFAAAAAA),
+                    color: context.textSub,
                   ),
                 ),
               ),
@@ -244,17 +245,16 @@ class _PieChartCardState extends State<_PieChartCard> {
                   child: CustomPaint(
                     painter: _PieChartPainter(
                       entries: widget.data,
-                      selectedIndex: _pressedIndex,
-                    ),
+                      selectedIndex: _pressedIndex,                      backgroundColor: context.card,                    ),
                   ),
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            const Center(
+            Center(
               child: Text(
                 'Toca una porción para ver el historial',
-                style: TextStyle(fontSize: 11, color: Color(0xFFBBBBBB)),
+                style: TextStyle(fontSize: 11, color: context.textSub),
               ),
             ),
             const SizedBox(height: 20),
@@ -288,18 +288,18 @@ class _PieChartCardState extends State<_PieChartCard> {
                       Expanded(
                         child: Text(
                           label,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 13,
-                            color: Color(0xFF444444),
+                            color: context.textMain,
                           ),
                         ),
                       ),
                       Text(
                         '\$${widget.fmt(amount)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFF1A1A2E),
+                          color: context.textMain,
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -308,17 +308,17 @@ class _PieChartCardState extends State<_PieChartCard> {
                         child: Text(
                           '$pct%',
                           textAlign: TextAlign.right,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF888888),
+                            color: context.textSub,
                           ),
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
+                      Icon(
                         Icons.chevron_right_rounded,
                         size: 16,
-                        color: Color(0xFFCCCCCC),
+                        color: context.textSub,
                       ),
                     ],
                   ),
@@ -337,8 +337,9 @@ class _PieChartCardState extends State<_PieChartCard> {
 class _PieChartPainter extends CustomPainter {
   final List<MapEntry<String, double>> entries;
   final int? selectedIndex;
+  final Color backgroundColor;
 
-  const _PieChartPainter({required this.entries, this.selectedIndex});
+  const _PieChartPainter({required this.entries, this.selectedIndex, required this.backgroundColor});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -375,7 +376,7 @@ class _PieChartPainter extends CustomPainter {
 
     // Hueco central (efecto dona)
     final holePaint = Paint()
-      ..color = Colors.white
+      ..color = backgroundColor
       ..style = PaintingStyle.fill;
     canvas.drawCircle(center, baseRadius * 0.46, holePaint);
   }
@@ -383,5 +384,6 @@ class _PieChartPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _PieChartPainter oldDelegate) =>
       oldDelegate.entries != entries ||
-      oldDelegate.selectedIndex != selectedIndex;
+      oldDelegate.selectedIndex != selectedIndex ||
+      oldDelegate.backgroundColor != backgroundColor;
 }

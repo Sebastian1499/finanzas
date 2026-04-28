@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/theme_service.dart';
+import '../theme/app_colors.dart';
 import 'user_settings_screen.dart';
 import 'change_password_screen.dart';
 import 'labels_screen.dart';
@@ -18,7 +20,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
 
             // ── Header ────────────────────────────────────────────────
-            const Center(
+            Center(
               child: Column(
                 children: [
                   Text(
@@ -26,13 +28,13 @@ class SettingsScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF1A1A2E),
+                      color: context.textMain,
                     ),
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Personaliza tu experiencia',
-                    style: TextStyle(fontSize: 12, color: Color(0xFF888888)),
+                    style: TextStyle(fontSize: 12, color: context.textSub),
                   ),
                 ],
               ),
@@ -145,7 +147,7 @@ class SettingsScreen extends StatelessWidget {
                   icon: Icons.color_lens_outlined,
                   title: 'Apariencia',
                   subtitle: 'Tema claro u oscuro',
-                  onTap: () => _showComingSoon(context, 'Apariencia'),
+                  onTap: () => _showThemePicker(context),
                 ),
                 _SettingsTile(
                   icon: Icons.language_rounded,
@@ -184,15 +186,79 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 40),
 
             // ── Versión ───────────────────────────────────────────────
-            const Center(
+            Center(
               child: Text(
                 'App Finanzas v1.0.0',
-                style: TextStyle(fontSize: 11, color: Color(0xFFCCCCCC)),
+                style: TextStyle(fontSize: 11, color: context.textSub),
               ),
             ),
 
             const SizedBox(height: 28),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showThemePicker(BuildContext context) {
+    final options = [
+      (ThemeMode.system, Icons.brightness_auto_rounded,   'Según el sistema'),
+      (ThemeMode.light,  Icons.light_mode_rounded,        'Claro'),
+      (ThemeMode.dark,   Icons.dark_mode_rounded,         'Oscuro'),
+    ];
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => ValueListenableBuilder<ThemeMode>(
+        valueListenable: themeNotifier,
+        builder: (_, current, __) => Container(
+          decoration: BoxDecoration(
+            color: sheetCtx.card,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  decoration: BoxDecoration(color: sheetCtx.handle, borderRadius: BorderRadius.circular(2)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Text('Apariencia', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: sheetCtx.textMain)),
+              const SizedBox(height: 16),
+              ...options.map((o) {
+                final (mode, icon, label) = o;
+                final isSelected = current == mode;
+                return InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () {
+                    setTheme(mode);
+                    Navigator.pop(sheetCtx);
+                  },
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    decoration: BoxDecoration(
+                      color: isSelected ? const Color(0xFF1A1A2E) : sheetCtx.inputFill,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(icon, size: 20, color: isSelected ? Colors.white : sheetCtx.textMain),
+                        const SizedBox(width: 14),
+                        Expanded(child: Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: isSelected ? Colors.white : sheetCtx.textMain))),
+                        if (isSelected) const Icon(Icons.check_rounded, size: 18, color: Colors.white),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ),
         ),
       ),
     );
@@ -286,11 +352,11 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: context.card,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: context.shadow,
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -338,7 +404,7 @@ class _SettingsTile extends StatelessWidget {
               children: [
                 Icon(icon,
                     size: 22,
-                    color: iconColor ?? const Color(0xFF1A1A2E)),
+                    color: iconColor ?? context.textMain),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -349,16 +415,16 @@ class _SettingsTile extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
-                          color: titleColor ?? const Color(0xFF1A1A2E),
+                          color: titleColor ?? context.textMain,
                         ),
                       ),
                       if (subtitle.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
                           subtitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF888888),
+                            color: context.textSub,
                           ),
                         ),
                       ],
@@ -366,21 +432,21 @@ class _SettingsTile extends StatelessWidget {
                   ),
                 ),
                 if (showArrow)
-                  const Icon(
+                  Icon(
                     Icons.chevron_right_rounded,
                     size: 18,
-                    color: Color(0xFFCCCCCC),
+                    color: context.textSub,
                   ),
               ],
             ),
           ),
         ),
         if (!isLast)
-          const Divider(
+          Divider(
               height: 1,
               indent: 54,
               endIndent: 18,
-              color: Color(0xFFF0F0F0)),
+              color: context.divider),
       ],
     );
   }
