@@ -1,17 +1,12 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'firebase_options.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'services/theme_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
   await loadSavedTheme();
   runApp(const AppFinanzas());
 }
@@ -57,25 +52,39 @@ class AppFinanzas extends StatelessWidget {
 }
 
 /// Muestra HomeScreen si el usuario está autenticado, LoginScreen si no.
-class _AuthGate extends StatelessWidget {
+class _AuthGate extends StatefulWidget {
   const _AuthGate();
 
   @override
+  State<_AuthGate> createState() => _AuthGateState();
+}
+
+class _AuthGateState extends State<_AuthGate> {
+  bool? _isLoggedIn;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkToken();
+  }
+
+  Future<void> _checkToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (mounted) {
+      setState(() => _isLoggedIn = token != null && token.isNotEmpty);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF1A1A2E),
-              ),
-            ),
-          );
-        }
-        return snapshot.hasData ? const HomeScreen() : const LoginScreen();
-      },
-    );
+    if (_isLoggedIn == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(color: Color(0xFF1A1A2E)),
+        ),
+      );
+    }
+    return _isLoggedIn! ? const HomeScreen() : const LoginScreen();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../theme/app_colors.dart';
+import 'login_screen.dart';
 import 'notifications_screen.dart';
 import 'user_settings_screen.dart';
 import 'change_password_screen.dart';
@@ -293,7 +294,13 @@ class SettingsScreen extends StatelessWidget {
             onPressed: () async {
               Navigator.pop(ctx); // cerrar diálogo
               await AuthService().signOut();
-              // AuthGate detecta el logout y muestra LoginScreen
+              if (ctx.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  ctx,
+                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  (_) => false,
+                );
+              }
             },
             child: const Text('Cerrar sesión',
                 style: TextStyle(

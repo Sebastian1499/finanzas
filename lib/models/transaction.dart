@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 
 @immutable
@@ -17,17 +17,20 @@ class Transaction {
     required this.createdAt,
   });
 
-  /// Constructor rápido para crear una transacción nueva (genera ID único).
+  /// Genera un ID único local para la transacción.
+  static String _generateId() {
+    final rand = Random();
+    return List.generate(20, (_) => rand.nextInt(16).toRadixString(16)).join();
+  }
+
+  /// Constructor rápido para crear una transacción nueva.
   factory Transaction.create({
     required String label,
     required double amount,
     required bool isIncome,
   }) {
     return Transaction(
-      id: FirebaseFirestore.instance
-          .collection('_')
-          .doc()
-          .id, // ID único de Firestore
+      id: _generateId(),
       label: label,
       amount: amount,
       isIncome: isIncome,
@@ -35,22 +38,26 @@ class Transaction {
     );
   }
 
-  factory Transaction.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  /// Construir desde JSON devuelto por la API REST.
+  factory Transaction.fromJson(Map<String, dynamic> json) {
     return Transaction(
-      id: doc.id,
-      label: data['label'] as String,
-      amount: (data['amount'] as num).toDouble(),
-      isIncome: data['isIncome'] as bool,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      id: json['id'] as String,
+      label: json['label'] as String,
+      amount: (json['amount'] as num).toDouble(),
+      isIncome: json['isIncome'] as bool,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 
-  Map<String, dynamic> toFirestore() => {
+  /// Serializar para enviar a la API REST.
+  Map<String, dynamic> toJson() => {
+        'id': id,
         'label': label,
         'amount': amount,
         'isIncome': isIncome,
-        'createdAt': Timestamp.fromDate(createdAt),
+        'createdAt': createdAt.toIso8601String(),
       };
 
   Transaction copyWith({

@@ -35,10 +35,8 @@ dependencies:
 
   cupertino_icons: ^1.0.8
 
-  # Firebase
-  firebase_core: ^3.13.0
-  firebase_auth: ^5.5.2
-  cloud_firestore: ^5.6.6
+  # HTTP para API REST
+  http: ^1.2.2
 
   shared_preferences: ^2.3.0
 

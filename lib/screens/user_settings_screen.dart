@@ -1,7 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../services/firestore_service.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 import 'change_password_screen.dart';
 
@@ -23,18 +22,16 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
   };
   bool _loadingProfile = true;
 
-  final _fs = FirestoreService();
-  late final String _uid;
+  final _api = ApiService();
 
   @override
   void initState() {
     super.initState();
-    _uid = FirebaseAuth.instance.currentUser!.uid;
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-    final data = await _fs.profileStream(_uid).first;
+    final data = await _api.getProfile();
     if (mounted) {
       setState(() {
         _profile = {
@@ -86,7 +83,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
     final formatted =
         '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
     setState(() => _profile['birthdate'] = formatted);
-    await _fs.updateProfile(_uid, {'birthdate': formatted});
+    await _api.updateProfile({'birthdate': formatted});
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Text('Fecha de nacimiento actualizada'),
@@ -220,7 +217,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                         final fullPhone = '${selectedCountry.dialCode} $number';
                         Navigator.pop(ctx);
                         setState(() => _profile['phone'] = fullPhone);
-                        await _fs.updateProfile(_uid, {'phone': fullPhone});
+                        await _api.updateProfile({'phone': fullPhone});
                         if (mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                             content: const Text('Teléfono actualizado'),
@@ -280,7 +277,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                     onTap: () async {
                       Navigator.pop(ctx);
                       setState(() => _profile['currency'] = c.code);
-                      await _fs.updateProfile(_uid, {'currency': c.code});
+                      await _api.updateProfile({'currency': c.code});
                       if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text('Moneda cambiada a ${c.code}'),
@@ -418,7 +415,7 @@ class _UserSettingsScreenState extends State<UserSettingsScreen> {
                     if (newValue.isEmpty) return;
                     Navigator.pop(context);
                     setState(() => _profile[fieldKey] = newValue);
-                    await _fs.updateProfile(_uid, {fieldKey: newValue});
+                    await _api.updateProfile({fieldKey: newValue});
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(

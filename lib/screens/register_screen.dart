@@ -1,8 +1,6 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'account_created_screen.dart';
 import '../services/auth_service.dart';
-import '../services/firestore_service.dart';
 import '../theme/app_colors.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -41,22 +39,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
     try {
-      final cred = await _authService.register(
+      await _authService.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      await FirestoreService().initDefaultLabels(cred.user!.uid);
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const AccountCreatedScreen()),
         );
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() => _errorMessage = AuthService.errorMessage(e));
-    } catch (_) {
-      setState(() => _errorMessage = 'Error inesperado. Intenta de nuevo.');
+    } catch (e) {
+      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

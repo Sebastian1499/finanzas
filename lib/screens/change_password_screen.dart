@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
@@ -51,11 +50,8 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         );
         Navigator.pop(context);
       }
-    } on FirebaseAuthException catch (e) {
-      setState(() => _errorMessage = AuthService.errorMessage(e));
-    } catch (_) {
-      setState(() =>
-          _errorMessage = 'No se pudo cambiar la contraseña. Intenta de nuevo.');
+    } catch (e) {
+      setState(() => _errorMessage = e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

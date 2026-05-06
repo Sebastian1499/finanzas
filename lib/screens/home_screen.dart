@@ -1,11 +1,9 @@
-import 'dart:async';
 import 'dart:math';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/app_label.dart';
 import '../models/app_notification.dart';
 import '../models/transaction.dart';
-import '../services/firestore_service.dart';
+import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 import 'add_transaction_screen.dart';
@@ -28,11 +26,8 @@ class _HomeScreenState extends State<HomeScreen>
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
-  final _fs = FirestoreService();
-  late final String _uid;
+  final _api = ApiService();
   List<Transaction> _transactions = [];
-  late StreamSubscription<List<Transaction>> _txSub;
-  late StreamSubscription<List<AppLabel>> _labelSub;
 
   List<Transaction> get _ingresos =>
       _transactions.where((t) => t.isIncome).toList();
@@ -59,16 +54,16 @@ class _HomeScreenState extends State<HomeScreen>
       .toStringAsFixed(0)
       .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
 
+  Future<void> _loadData() async {
+    final txs = await _api.getTransactions();
+    final lbls = await _api.getLabels();
+    if (mounted) setState(() { _transactions = txs; globalLabels = lbls; });
+  }
+
   @override
   void initState() {
     super.initState();
-    _uid = FirebaseAuth.instance.currentUser!.uid;
-    _txSub = _fs.transactionsStream(_uid).listen(
-      (txs) { if (mounted) setState(() => _transactions = txs); },
-    );
-    _labelSub = _fs.labelsStream(_uid).listen(
-      (lbls) { if (mounted) setState(() => globalLabels = lbls); },
-    );
+    _loadData();
     _loadReadIds();
     _pulseController = AnimationController(
       vsync: this,
@@ -81,8 +76,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   void dispose() {
-    _txSub.cancel();
-    _labelSub.cancel();
     _pulseController.dispose();
     super.dispose();
   }
@@ -111,7 +104,7 @@ class _HomeScreenState extends State<HomeScreen>
       MaterialPageRoute(
         builder: (_) => AddTransactionScreen(
           transactions: List.from(_transactions),
-    onSave: (t) => _fs.addTransaction(_uid, t),
+    onSave: (t) { _api.addTransaction(t).then((_) { if (mounted) _loadData(); }); },
         ),
       ),
     );
@@ -150,7 +143,7 @@ class _HomeScreenState extends State<HomeScreen>
       _selectionMode = false;
       _selectedIds.clear();
     });
-    _fs.deleteTransactions(_uid, ids);
+    Future.wait(ids.map((id) => _api.deleteTransaction(id))).then((_) { if (mounted) _loadData(); });
   }
 
   void _showEditSheet(String id) {
@@ -311,7 +304,7 @@ class _HomeScreenState extends State<HomeScreen>
                         _selectionMode = false;
                         _selectedIds.clear();
                       });
-                      _fs.updateTransaction(_uid, updated);
+                      _api.updateTransaction(updated).then((_) { if (mounted) _loadData(); });
                     },
                     child: const Text(
                       'Guardar cambios',

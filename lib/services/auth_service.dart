@@ -1,96 +1,96 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
+/// Servicio de autenticación que consume la API REST.
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  static const _base = 'http://localhost:3000/api';
 
-  /// Stream del usuario actual (null si no está autenticado).
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  // ── Iniciar sesión ────────────────────────────────────────────────────────
 
-  /// Usuario actualmente autenticado.
-  User? get currentUser => _auth.currentUser;
-
-  /// Iniciar sesión con correo y contraseña.
-  Future<UserCredential> signIn(String email, String password) {
-    return _auth.signInWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
+  /// Envía credenciales a POST /api/auth/login y guarda el token.
+  Future<void> signIn(String email, String password) async {
+    final response = await http.post(
+      Uri.parse('$_base/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'email': email, 'password': password}),
     );
+
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+
+    if (response.statusCode != 200) {
+      throw Exception(body['error'] ?? 'Error al iniciar sesión');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', body['token'] as String);
+    await prefs.setInt('userId', body['userId'] as int);
+    await prefs.setString('userName', body['name'] as String);
+    await prefs.setString('userEmail', body['email'] as String);
   }
 
-  /// Registrar nueva cuenta y crear perfil en Firestore.
-  Future<UserCredential> register({
+  // ── Registrar cuenta ──────────────────────────────────────────────────────
+
+  /// Envía datos a POST /api/auth/register y guarda el token.
+  Future<void> register({
     required String name,
     required String email,
     required String password,
   }) async {
-    final credential = await _auth.createUserWithEmailAndPassword(
-      email: email.trim(),
-      password: password,
+    final response = await http.post(
+      Uri.parse('$_base/auth/register'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'name': name, 'email': email, 'password': password}),
     );
 
-    // Actualizar displayName en Firebase Auth
-    await credential.user!.updateDisplayName(name.trim());
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
 
-    // Crear documento de perfil en Firestore
-    await _db
-        .collection('users')
-        .doc(credential.user!.uid)
-        .set({
-      'name': name.trim(),
-      'email': email.trim(),
-      'currency': 'COP',
-      'phone': '',
-      'birthdate': '',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    if (response.statusCode != 201) {
+      throw Exception(body['error'] ?? 'Error al registrar cuenta');
+    }
 
-    return credential;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', body['token'] as String);
+    await prefs.setInt('userId', body['userId'] as int);
+    await prefs.setString('userName', body['name'] as String);
+    await prefs.setString('userEmail', body['email'] as String);
   }
 
-  /// Cerrar sesión.
-  Future<void> signOut() => _auth.signOut();
+  // ── Cerrar sesión ─────────────────────────────────────────────────────────
 
-  /// Cambiar contraseña (reautentica primero).
+  Future<void> signOut() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
+    await prefs.remove('userId');
+    await prefs.remove('userName');
+    await prefs.remove('userEmail');
+  }
+
+  // ── Cambiar contraseña ────────────────────────────────────────────────────
+
+  /// Envía la solicitud a PUT /api/auth/change-password.
   Future<void> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async {
-    final user = _auth.currentUser;
-    if (user == null) throw Exception('No hay sesión activa');
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token') ?? '';
 
-    // Re-autenticar
-    final credential = EmailAuthProvider.credential(
-      email: user.email!,
-      password: currentPassword,
+    final response = await http.put(
+      Uri.parse('$_base/auth/change-password'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      }),
     );
-    await user.reauthenticateWithCredential(credential);
 
-    // Actualizar contraseña
-    await user.updatePassword(newPassword);
-  }
-
-  /// Mensaje de error legible en español.
-  static String errorMessage(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return 'Correo no registrado. ¿Aún no tienes cuenta?';
-      case 'wrong-password':
-      case 'invalid-credential':
-        return 'Correo o contraseña incorrectos. Si no tienes cuenta, créala.';
-      case 'email-already-in-use':
-        return 'Este correo ya está registrado';
-      case 'weak-password':
-        return 'La contraseña es muy débil (mínimo 6 caracteres)';
-      case 'invalid-email':
-        return 'El correo no es válido';
-      case 'too-many-requests':
-        return 'Demasiados intentos. Intenta de nuevo más tarde';
-      case 'network-request-failed':
-        return 'Sin conexión a internet';
-      default:
-        return 'Error: ${e.message}';
+    if (response.statusCode != 200) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw Exception(body['error'] ?? 'Error al cambiar contraseña');
     }
   }
 }

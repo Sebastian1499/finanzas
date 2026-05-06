@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 /// Modelo de etiqueta con nombre y color personalizables.
@@ -9,20 +9,27 @@ class AppLabel {
 
   AppLabel({required this.id, required this.name, required this.color});
 
-  factory AppLabel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  /// Construir desde JSON devuelto por la API REST.
+  factory AppLabel.fromJson(Map<String, dynamic> json) {
     return AppLabel(
-      id: doc.id,
-      name: data['name'] as String,
-      color: Color(data['color'] as int),
+      id: json['id'] as String,
+      name: json['name'] as String,
+      color: Color(json['color'] as int),
     );
   }
 
-  Map<String, dynamic> toFirestore() => {
+  /// Serializar para enviar a la API REST.
+  Map<String, dynamic> toJson() => {
+        'id': id,
         'name': name,
         'color': color.toARGB32(),
-        'createdAt': FieldValue.serverTimestamp(),
       };
+
+  /// Genera un ID único local para la etiqueta.
+  static String generateId() {
+    final rand = Random();
+    return 'lbl_${List.generate(16, (_) => rand.nextInt(16).toRadixString(16)).join()}';
+  }
 }
 
 /// Etiquetas por defecto (se copian a Firestore al crear cuenta).
