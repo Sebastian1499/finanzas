@@ -150,4 +150,18 @@ class ApiService {
       throw Exception('Error al actualizar perfil');
     }
   }
+
+  // ── Estadísticas ──────────────────────────────────────────────────────────
+
+  /// GET /api/stats — obtener resumen financiero del usuario.
+  Future<Map<String, dynamic>> getStats() async {
+    final response = await http.get(
+      Uri.parse('$_base/stats'),
+      headers: await _headers(),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Error al obtener estadísticas');
+    }
+    return jsonDecode(response.body) as Map<String, dynamic>;
+  }
 }
