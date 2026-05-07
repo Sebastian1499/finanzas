@@ -1,8 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../models/app_label.dart';
-import '../services/firestore_service.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 
 class LabelsScreen extends StatefulWidget {
@@ -14,8 +12,7 @@ class LabelsScreen extends StatefulWidget {
 
 
 class _LabelsScreenState extends State<LabelsScreen> {
-  final _fs = FirestoreService();
-  String get _uid => FirebaseAuth.instance.currentUser!.uid;
+  final _api = ApiService();
 
   // ── Abrir bottom sheet para crear o editar ──────────────────────────────
   void _openLabelSheet({AppLabel? existing, int? index}) {
@@ -203,23 +200,18 @@ class _LabelsScreenState extends State<LabelsScreen> {
                           if (name.isEmpty) return;
                           Navigator.pop(ctx);
                           if (existing == null) {
-                            // Nueva etiqueta: generar ID único de Firestore
-                            final id = FirebaseFirestore.instance
-                                .collection('_')
-                                .doc()
-                                .id;
                             final newLabel = AppLabel(
-                                id: id,
+                                id: AppLabel.generateId(),
                                 name: name,
                                 color: selectedColor);
                             setState(() => globalLabels.add(newLabel));
-                            await _fs.addLabel(_uid, newLabel);
+                            await _api.addLabel(newLabel);
                           } else {
                             setState(() {
                               existing.name = name;
                               existing.color = selectedColor;
                             });
-                            await _fs.updateLabel(_uid, existing);
+                            await _api.updateLabel(existing);
                           }
                         },
                         child: const Text(
@@ -270,7 +262,7 @@ class _LabelsScreenState extends State<LabelsScreen> {
               Navigator.pop(context);
               final label = globalLabels[index];
               setState(() => globalLabels.removeAt(index));
-              await _fs.deleteLabel(_uid, label.id);
+              await _api.deleteLabel(label.id);
             },
             child: const Text('Eliminar',
                 style: TextStyle(color: Color(0xFFC62828))),
