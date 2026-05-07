@@ -1,3 +1,7 @@
+# Rutas del perfil de usuario.
+# El usuario puede consultar sus datos personales y actualizarlos.
+# Solo se devuelven campos seguros (sin contraseña ni datos internos).
+
 from flask import Blueprint, request, jsonify
 from database import get_conn
 from middleware.authenticate import authenticate
@@ -7,7 +11,9 @@ profile_bp = Blueprint('profile', __name__)
 profile_bp.before_request(authenticate)
 
 
-# ── GET /api/profile ──────────────────────────────────────────────────────
+# GET /api/profile
+# Devuelve los datos del perfil del usuario autenticado.
+# La contraseña no se incluye en la respuesta por seguridad.
 @profile_bp.route('/', methods=['GET'])
 def get_profile():
     with get_conn() as conn:
@@ -20,7 +26,10 @@ def get_profile():
     return jsonify(dict(user))
 
 
-# ── PUT /api/profile ──────────────────────────────────────────────────────
+# PUT /api/profile
+# Actualiza uno o varios campos del perfil.
+# Usamos COALESCE para que los campos que no vienen en el body
+# conserven su valor anterior sin pisarlo con NULL.
 @profile_bp.route('/', methods=['PUT'])
 def update_profile():
     data      = request.get_json() or {}
@@ -28,7 +37,7 @@ def update_profile():
     email     = data.get('email')
     phone     = data.get('phone')
     birthdate = data.get('birthdate')
-    currency  = data.get('currency')
+    currency  = data.get('currency')  # ej: 'COP', 'USD', 'EUR'
 
     with get_conn() as conn:
         conn.execute(
